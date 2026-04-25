@@ -1,6 +1,9 @@
 import os
 from groq import AsyncGroq
 from bot.data.catalog import get_catalog_text
+from dotenv import load_dotenv
+
+load_dotenv()
 
 client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
 
