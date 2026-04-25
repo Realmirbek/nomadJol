@@ -1,3 +1,5 @@
+import json
+import os
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
@@ -8,8 +10,28 @@ from aiogram.types import ReplyKeyboardRemove
 
 router = Router()
 
-# Хранение операторов в памяти (потом -> PostgreSQL)
-registered_operators: list = []
+OPERATORS_FILE = "operators.json"
+
+
+def load_operators() -> list:
+    """Загружаем операторов из файла при старте"""
+    if not os.path.exists(OPERATORS_FILE):
+        return []
+    try:
+        with open(OPERATORS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_operators(operators: list):
+    """Сохраняем список операторов в файл"""
+    with open(OPERATORS_FILE, "w", encoding="utf-8") as f:
+        json.dump(operators, f, ensure_ascii=False, indent=2)
+
+
+# Загружаем при старте — данные не потеряются после перезапуска
+registered_operators: list = load_operators()
 
 
 class OperatorForm(StatesGroup):
@@ -127,8 +149,13 @@ async def process_phone(message: Message, state: FSMContext):
     data = await state.get_data()
 
     # Сохраняем оператора
-    operator = {**data, "telegram_id": message.from_user.id, "id": len(registered_operators) + 100}
+    operator = {
+        **data,
+        "telegram_id": message.from_user.id,
+        "id": len(registered_operators) + 100
+    }
     registered_operators.append(operator)
+    save_operators(registered_operators)  # <-- сохраняем в файл
 
     await state.clear()
 
@@ -151,7 +178,6 @@ async def process_phone(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "my_bookings")
 async def my_bookings(callback: CallbackQuery):
-    # Заглушка — потом из PostgreSQL
     await callback.message.answer(
         "📊 *Ваши бронирования*\n\n"
         "1. @tourist\_1 | Конный тур | 15 июня | ⏳ Ожидает депозит\n"

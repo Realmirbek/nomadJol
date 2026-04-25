@@ -1,0 +1,15 @@
+[
+  {
+    "name": "mark",
+    "tour_type": "🧗 Альпинизм",
+    "region": "Ала-Арча",
+    "description": "альпенизм в ала арче",
+    "price_per_day": 30,
+    "max_people": 4,
+    "duration": "3-10",
+    "contact": "@Realmirbek",
+    "phone": "+996708456347",
+    "telegram_id": 5670014793,
+    "id": 100
+  }
+]

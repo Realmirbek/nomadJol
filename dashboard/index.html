@@ -127,7 +127,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="panel">
       <div class="ptitle">🌍 География туристов</div>
-      <div id="cl"></div>
+      <div id="cl"><div class="empty">Ждём первых туристов...<br>Данные появятся после /start в боте</div></div>
     </div>
   </div>
 
@@ -183,10 +183,6 @@ new Chart(document.getElementById('ct'),{
   options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{font:{size:10},padding:8,boxWidth:9}}}}
 });
 
-const countries=[{f:'🇷🇺',n:'Россия',c:42},{f:'🇩🇪',n:'Германия',c:28},{f:'🇺🇸',n:'США',c:19},{f:'🇰🇿',n:'Казахстан',c:15},{f:'🇫🇷',n:'Франция',c:11},{f:'🇬🇧',n:'Великобритания',c:9}];
-const mx=42;
-document.getElementById('cl').innerHTML=countries.map(c=>`<div class="ci"><div class="fl">${c.f}</div><div class="cn">${c.n}</div><div class="cbw"><div class="cbar"><div class="cbfill" data-w="${Math.round(c.c/mx*100)}"></div></div></div><div class="cc">${c.c}</div></div>`).join('');
-
 const revData=[{m:'Февраль',a:820,ch:'+12%',cl:'up'},{m:'Март',a:1240,ch:'+51%',cl:'up'},{m:'Апрель',a:1890,ch:'+52%',cl:'up'},{m:'Май (прогноз)',a:3200,ch:'+69%',cl:'pj'},{m:'Июнь (прогноз)',a:5800,ch:'+81%',cl:'pj'}];
 document.getElementById('rt').innerHTML=revData.map(r=>`<div class="rrow"><div class="rmo">${r.m}</div><div class="ramt">$${r.a.toLocaleString()}</div><div class="rchg ${r.cl}">${r.ch}</div></div>`).join('');
 
@@ -199,13 +195,27 @@ async function load(){
     document.getElementById('s4').textContent='$'+d.potential_revenue;
     document.getElementById('kv').textContent='$'+Math.round(Math.max(d.total_requests*45,820)*3).toLocaleString();
 
+    // Реальная география туристов
+    if(d.countries && d.countries.length > 0){
+      const mx = Math.max(...d.countries.map(c=>c.count));
+      document.getElementById('cl').innerHTML = d.countries.map(c=>`
+        <div class="ci">
+          <div class="fl">${c.flag}</div>
+          <div class="cn">${c.name}</div>
+          <div class="cbw"><div class="cbar"><div class="cbfill" data-w="${Math.round(c.count/mx*100)}"></div></div></div>
+          <div class="cc">${c.count}</div>
+        </div>`).join('');
+      setTimeout(()=>{
+        document.querySelectorAll('.cbfill').forEach(e=>e.style.width=e.dataset.w+'%');
+      },150);
+    }
+
     const regions=d.regions;
     const rmax=Math.max(...Object.values(regions),1);
     document.getElementById('rl').innerHTML=Object.entries(regions).sort((a,b)=>b[1]-a[1]).map(([nm,cnt])=>`<div class="rbar"><div class="rbar-top"><span class="rbar-name">${nm}</span><span class="rbar-val">${cnt} опер.</span></div><div class="track"><div class="fill" data-p="${Math.round(cnt/rmax*100)}"></div></div></div>`).join('');
 
     setTimeout(()=>{
       document.querySelectorAll('.fill').forEach(e=>e.style.width=e.dataset.p+'%');
-      document.querySelectorAll('.cbfill').forEach(e=>e.style.width=e.dataset.w+'%');
     },150);
 
     document.getElementById('upd').textContent='обновлено '+new Date().toLocaleTimeString('ru');

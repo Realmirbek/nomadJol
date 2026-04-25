@@ -1,71 +1,87 @@
 import json
 import os
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+STATS_FILE = "stats.json"
+OPERATORS_FILE = "operators.json"
+
+COUNTRY_INFO = {
+    "RU": {"name": "Россия", "flag": "🇷🇺"},
+    "DE": {"name": "Германия", "flag": "🇩🇪"},
+    "US": {"name": "США", "flag": "🇺🇸"},
+    "KZ": {"name": "Казахстан", "flag": "🇰🇿"},
+    "FR": {"name": "Франция", "flag": "🇫🇷"},
+    "GB": {"name": "Великобритания", "flag": "🇬🇧"},
+    "CN": {"name": "Китай", "flag": "🇨🇳"},
+    "OTHER": {"name": "Другая", "flag": "🌍"},
+}
 
 
-def load_operators():
-    path = os.path.join(os.path.dirname(__file__), "..", "operators.json")
-    if os.path.exists(path):
+def load_json(path: str, default):
+    if not os.path.exists(path):
+        return default
+    try:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
-    return []
-
-
-def load_stats():
-    path = os.path.join(os.path.dirname(__file__), "..", "stats.json")
-    if os.path.exists(path):
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    return {"total_requests": 0, "unique_users": 0, "requests_by_type": {}}
+    except Exception:
+        return default
 
 
 @app.get("/api/stats")
-def get_stats():
-    operators = load_operators()
-    stats = load_stats()
+async def get_stats():
+    stats = load_json(STATS_FILE, {"total": 0, "unique_users": [], "countries": {}})
+    operators = load_json(OPERATORS_FILE, [])
 
-    # Считаем по регионам из хардкода + зарегистрированных
+    total = stats.get("total", 0)
+    unique = len(stats.get("unique_users", []))
+    countries_raw = stats.get("countries", {})
+
+    # Форматируем страны для дашборда
+    countries = []
+    for code, count in sorted(countries_raw.items(), key=lambda x: -x[1]):
+        info = COUNTRY_INFO.get(code, {"name": code, "flag": "🌍"})
+        countries.append({
+            "code": code,
+            "name": info["name"],
+            "flag": info["flag"],
+            "count": count
+        })
+
+    # Регионы из операторов
     regions = {}
     for op in operators:
-        r = op.get("region", "Другое")
+        r = op.get("region", "Другой")
         regions[r] = regions.get(r, 0) + 1
 
-    # Базовые операторы из каталога
-    base_regions = {
-        "Каракол": 2, "Сон-Куль": 1, "Ала-Арча": 1,
-        "Иссык-Куль": 1, "Нарын": 1, "Джалал-Абад": 1
-    }
-    for r, count in base_regions.items():
-        regions[r] = regions.get(r, 0) + count
+    # Регионы из хардкода если нет зарегистрированных
+    if not regions:
+        regions = {
+            "Каракол": 2, "Иссык-Куль": 1, "Сон-Куль": 1,
+            "Нарын": 1, "Ала-Арча": 1, "Джалал-Абад": 1
+        }
 
-    return {
-        "total_requests": stats.get("total_requests", 0),
-        "unique_users": stats.get("unique_users", 0),
-        "registered_operators": len(operators),
+    return JSONResponse({
+        "total_requests": total,
+        "unique_users": unique,
         "total_operators": 7 + len(operators),
+        "potential_revenue": round(total * 45 * 0.1),
         "regions": regions,
-        "potential_revenue": stats.get("total_requests", 0) * 8,
-        "requests_by_type": stats.get("requests_by_type", {}),
-    }
+        "countries": countries
+    })
 
 
 @app.get("/api/operators")
-def get_operators():
-    return load_operators()
+async def get_operators():
+    operators = load_json(OPERATORS_FILE, [])
+    return JSONResponse(operators)
 
 
 @app.get("/", response_class=HTMLResponse)
-def dashboard():
-    with open(os.path.join(os.path.dirname(__file__), "index.html"), encoding="utf-8") as f:
+async def dashboard():
+    html_path = os.path.join(os.path.dirname(__file__), "index.html")
+    with open(html_path, encoding="utf-8") as f:
         return f.read()
