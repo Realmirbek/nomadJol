@@ -34,7 +34,7 @@ async def ask_ai(user_message: str, chat_history: list = None) -> str:
     messages.append({"role": "user", "content": user_message})
 
     response = await client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.1-8b-instant",
         messages=[{"role": "system", "content": system}] + messages,
         max_tokens=1024,
         temperature=0.7,

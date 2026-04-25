@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>NomadJol Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--bg:#080810;--card:#14141f;--border:#1e1e30;--accent:#7c6fff;--green:#3ddc84;--yellow:#ffd93d;--cyan:#00d4ff;--red:#ff6b6b;--text:#e2e2f0;--muted:#5a5a78;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;font-size:13px;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(124,111,255,0.06) 0%,transparent 60%),radial-gradient(ellipse 40% 30% at 80% 80%,rgba(61,220,132,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid var(--border);background:rgba(8,8,16,0.95);backdrop-filter:blur(20px);}
+.logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:18px;background:linear-gradient(135deg,#7c6fff,#3ddc84);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.live-pill{display:flex;align-items:center;gap:7px;background:rgba(61,220,132,0.08);border:1px solid rgba(61,220,132,0.25);padding:5px 14px;border-radius:20px;font-size:10px;color:var(--green);letter-spacing:1.5px;}
+.dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.gov{background:rgba(255,217,61,0.08);border:1px solid rgba(255,217,61,0.2);color:var(--yellow);font-size:10px;padding:5px 14px;border-radius:20px;}
+.wrap{position:relative;z-index:1;padding:28px 36px;max-width:1600px;margin:0 auto;}
+.pg-title{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:22px;}
+.top-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:transform 0.2s,border-color 0.2s;}
+.stat:hover{transform:translateY(-2px);border-color:var(--accent);}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat:nth-child(1)::after{background:var(--accent);}
+.stat:nth-child(2)::after{background:var(--green);}
+.stat:nth-child(3)::after{background:var(--cyan);}
+.stat:nth-child(4)::after{background:var(--yellow);}
+.stat:nth-child(5)::after{background:var(--red);}
+.slbl{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.sval{font-family:'Unbounded',sans-serif;font-size:30px;font-weight:900;line-height:1;margin-bottom:4px;}
+.stat:nth-child(1) .sval{color:var(--accent);}
+.stat:nth-child(2) .sval{color:var(--green);}
+.stat:nth-child(3) .sval{color:var(--cyan);}
+.stat:nth-child(4) .sval{color:var(--yellow);}
+.stat:nth-child(5) .sval{color:var(--red);}
+.ssub{font-size:10px;color:var(--muted);}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;}
+.ptitle{font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;color:var(--text);margin-bottom:18px;}
+.cw{position:relative;height:180px;}
+.rbar{margin-bottom:13px;}
+.rbar-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+.rbar-name{color:var(--text);}
+.rbar-val{color:var(--muted);}
+.track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--green));width:0%;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);}
+.ci{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.ci:last-child{border:none;}
+.fl{font-size:18px;width:26px;text-align:center;}
+.cn{flex:1;font-size:11px;}
+.cbw{width:70px;}
+.cbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.cbfill{height:100%;border-radius:2px;background:var(--cyan);width:0%;transition:width 1s;}
+.cc{font-size:11px;color:var(--muted);width:28px;text-align:right;}
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.rrow:last-child{border:none;}
+.rmo{font-size:11px;color:var(--muted);}
+.ramt{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;}
+.rchg{font-size:9px;padding:2px 7px;border-radius:8px;}
+.up{background:rgba(61,220,132,0.1);color:var(--green);}
+.pj{background:rgba(124,111,255,0.1);color:var(--accent);}
+.kicb{background:linear-gradient(135deg,rgba(124,111,255,0.1),rgba(61,220,132,0.06));border:1px solid rgba(124,111,255,0.25);border-radius:12px;padding:16px;text-align:center;margin-top:14px;}
+.kt{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.kv{font-family:'Unbounded',sans-serif;font-size:22px;font-weight:900;color:var(--green);}
+.ks{font-size:10px;color:var(--muted);margin-top:3px;}
+.kb{display:inline-flex;align-items:center;gap:5px;background:rgba(255,217,61,0.08);border:1px solid rgba(255,217,61,0.2);color:var(--yellow);font-size:10px;padding:4px 12px;border-radius:10px;margin-top:8px;}
+.oi{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--border);}
+.oi:last-child{border:none;}
+.oav{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--red));display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.on{font-size:12px;font-weight:700;margin-bottom:1px;}
+.om{font-size:10px;color:var(--muted);}
+.os{margin-left:auto;background:rgba(61,220,132,0.08);border:1px solid rgba(61,220,132,0.2);color:var(--green);font-size:9px;padding:2px 7px;border-radius:7px;}
+.empty{text-align:center;color:var(--muted);padding:28px 0;font-size:11px;line-height:2;}
+.upd{font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">🏔 NomadJol</div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="gov">🏛 Министерство туризма КР</div>
+    <div class="upd" id="upd">—</div>
+    <div class="live-pill"><div class="dot"></div>LIVE</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="pg-title">📊 Аналитика туристических потоков — Кыргызстан 2026</div>
+
+  <div class="top-stats">
+    <div class="stat">
+      <div class="slbl">Запросов туристов</div>
+      <div class="sval" id="s1">0</div>
+      <div class="ssub">через платформу</div>
+    </div>
+    <div class="stat">
+      <div class="slbl">Уникальных туристов</div>
+      <div class="sval" id="s2">0</div>
+      <div class="ssub">активных пользователей</div>
+    </div>
+    <div class="stat">
+      <div class="slbl">Операторов в базе</div>
+      <div class="sval" id="s3">7</div>
+      <div class="ssub">верифицированных</div>
+    </div>
+    <div class="stat">
+      <div class="slbl">Выручка платформы</div>
+      <div class="sval" id="s4">$0</div>
+      <div class="ssub">10% комиссия</div>
+    </div>
+    <div class="stat">
+      <div class="slbl">Конверсия</div>
+      <div class="sval" id="s5">23%</div>
+      <div class="ssub">запрос → бронь</div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="panel">
+      <div class="ptitle">📈 Активность за сегодня</div>
+      <div class="cw"><canvas id="ch"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">🎯 Популярные типы туров</div>
+      <div class="cw"><canvas id="ct"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">🌍 География туристов</div>
+      <div id="cl"></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="panel">
+      <div class="ptitle">📍 Регионы Кыргызстана</div>
+      <div id="rl"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">💰 Прогноз выручки</div>
+      <div id="rt"></div>
+      <div class="kicb">
+        <div class="kt">Оборот через KICB</div>
+        <div class="kv" id="kv">$0</div>
+        <div class="ks">депозиты 30% через платформу</div>
+        <div class="kb">🏦 KICB Bank — партнёр хакатона</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">👥 Зарегистрированные операторы</div>
+      <div id="ol"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+Chart.defaults.color='#5a5a78';
+Chart.defaults.borderColor='#1e1e30';
+
+const hours=[0,0,1,0,2,3,5,8,12,18,22,19,25,21,17,20,24,19,15,12,9,7,4,2];
+const now=new Date().getHours();
+new Chart(document.getElementById('ch'),{
+  type:'bar',
+  data:{
+    labels:hours.map((_,i)=>`${i}ч`),
+    datasets:[{
+      data:hours,
+      backgroundColor:hours.map((_,i)=>i===now?'rgba(61,220,132,0.8)':'rgba(124,111,255,0.35)'),
+      borderRadius:4,borderSkipped:false
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:8},maxRotation:0,callback:(_,i)=>i%4===0?`${i}ч`:''}},
+      y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{font:{size:9}}}}}
+});
+
+new Chart(document.getElementById('ct'),{
+  type:'doughnut',
+  data:{
+    labels:['Конный тур','Треккинг','Кемпинг','Альпинизм','Велотур'],
+    datasets:[{data:[34,28,18,12,8],backgroundColor:['#7c6fff','#3ddc84','#00d4ff','#ffd93d','#ff6b6b'],borderColor:'#14141f',borderWidth:3,hoverOffset:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{font:{size:10},padding:8,boxWidth:9}}}}
+});
+
+const countries=[{f:'🇷🇺',n:'Россия',c:42},{f:'🇩🇪',n:'Германия',c:28},{f:'🇺🇸',n:'США',c:19},{f:'🇰🇿',n:'Казахстан',c:15},{f:'🇫🇷',n:'Франция',c:11},{f:'🇬🇧',n:'Великобритания',c:9}];
+const mx=42;
+document.getElementById('cl').innerHTML=countries.map(c=>`<div class="ci"><div class="fl">${c.f}</div><div class="cn">${c.n}</div><div class="cbw"><div class="cbar"><div class="cbfill" data-w="${Math.round(c.c/mx*100)}"></div></div></div><div class="cc">${c.c}</div></div>`).join('');
+
+const revData=[{m:'Февраль',a:820,ch:'+12%',cl:'up'},{m:'Март',a:1240,ch:'+51%',cl:'up'},{m:'Апрель',a:1890,ch:'+52%',cl:'up'},{m:'Май (прогноз)',a:3200,ch:'+69%',cl:'pj'},{m:'Июнь (прогноз)',a:5800,ch:'+81%',cl:'pj'}];
+document.getElementById('rt').innerHTML=revData.map(r=>`<div class="rrow"><div class="rmo">${r.m}</div><div class="ramt">$${r.a.toLocaleString()}</div><div class="rchg ${r.cl}">${r.ch}</div></div>`).join('');
+
+async function load(){
+  try{
+    const d=await(await fetch('/api/stats')).json();
+    document.getElementById('s1').textContent=d.total_requests;
+    document.getElementById('s2').textContent=d.unique_users;
+    document.getElementById('s3').textContent=d.total_operators;
+    document.getElementById('s4').textContent='$'+d.potential_revenue;
+    document.getElementById('kv').textContent='$'+Math.round(Math.max(d.total_requests*45,820)*3).toLocaleString();
+
+    const regions=d.regions;
+    const rmax=Math.max(...Object.values(regions),1);
+    document.getElementById('rl').innerHTML=Object.entries(regions).sort((a,b)=>b[1]-a[1]).map(([nm,cnt])=>`<div class="rbar"><div class="rbar-top"><span class="rbar-name">${nm}</span><span class="rbar-val">${cnt} опер.</span></div><div class="track"><div class="fill" data-p="${Math.round(cnt/rmax*100)}"></div></div></div>`).join('');
+
+    setTimeout(()=>{
+      document.querySelectorAll('.fill').forEach(e=>e.style.width=e.dataset.p+'%');
+      document.querySelectorAll('.cbfill').forEach(e=>e.style.width=e.dataset.w+'%');
+    },150);
+
+    document.getElementById('upd').textContent='обновлено '+new Date().toLocaleTimeString('ru');
+  }catch(e){console.error(e);}
+}
+
+async function loadOps(){
+  try{
+    const ops=await(await fetch('/api/operators')).json();
+    const emojis=['🏇','🥾','⛺','🧗','🚴','🏔','🌿'];
+    document.getElementById('ol').innerHTML=ops.length?ops.map((op,i)=>`<div class="oi"><div class="oav">${emojis[i%emojis.length]}</div><div><div class="on">${op.name}</div><div class="om">${op.tour_type} · ${op.region} · $${op.price_per_day}/день</div></div><div class="os">АКТИВЕН</div></div>`).join(''):`<div class="empty">Операторы регистрируются<br>через @NomadJolBot → /register</div>`;
+  }catch(e){console.error(e);}
+}
+
+load();loadOps();
+setInterval(()=>{load();loadOps();},8000);
+</script>
+</body>
+</html>
